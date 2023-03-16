@@ -2,109 +2,82 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Link;
-use ApiPlatform\Metadata\Post;
-use App\Controller\AcceptGroupRequestController;
 use App\Repository\GroupRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 
 #[ORM\Entity(repositoryClass: GroupRequestRepository::class)]
 #[ApiResource(
-    operations: [ new Post(security: "is_granted('ROLE_USER')") ],
-    denormalizationContext: ['groups' => ['request:write']],
-)]
-//#[ApiResource(
-//    uriTemplate: '/groups/{group_id}/requests/{id}',
-//    operations: [ new Get() ],
-//    uriVariables: [
-//        'group_id' => new Link(toProperty: 'targetGroup', fromClass: Group::class),
-//        'id' => new Link(fromClass: GroupRequest::class),
-//    ]
-//)]
-#[ApiResource(
-    uriTemplate: '/groups/{group_id}/requests',
-    operations: [ new GetCollection() ],
-    uriVariables: [
-        'group_id' => new Link(toProperty: 'targetGroup', fromClass: Group::class),
-    ],
-    denormalizationContext: ['groups' => ['request:accept']]
-)]
-#[ApiResource(
-//    operations: [ new Post(security: "is_granted('ROLE_USER')") ],
-//    denormalizationContext: ['groups' => ['request:write']],
     operations: [
-        new Post(
-            uriTemplate: '/group_requests/{id}/accept',
-            controller: AcceptGroupRequestController::class,
-            description: 'Accept and add to the group the user who have request access',
-            name: 'accept_group_request'
-        )
-        ],
-    denormalizationContext: ['groups' => ['request:empty']]
+        new GetCollection(),
+        new Post(),
+        new Get(),
+        new Patch(),
+        new Delete(),
+    ],
+    normalizationContext: ['groups' => ['read']],
+    denormalizationContext: ['groups' => ['write']],
 )]
 class GroupRequest
 {
-    public final const PENDING = 0;
-    public final const DONE = 1;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'groupRequests')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $targetUser = null;
+    #[ORM\Column]
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\ManyToOne(inversedBy: 'groupRequests')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['request:write'])]
-    private ?Group $targetGroup = null;
+    private ?user $user = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $status = self::PENDING;
+    #[ORM\ManyToOne(inversedBy: 'groupRequests')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?group $group = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getTargetUser(): ?User
+    public function getCreatedAt(): \DateTimeImmutable
     {
-        return $this->targetUser;
+        return $this->createdAt;
     }
 
-    public function setTargetUser(?User $targetUser): self
+    public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
-        $this->targetUser = $targetUser;
+        $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getTargetGroup(): ?Group
+    public function getUser(): ?user
     {
-        return $this->targetGroup;
+        return $this->user;
     }
 
-    public function setTargetGroup(?Group $targetGroup): self
+    public function setUser(?user $user): self
     {
-        $this->targetGroup = $targetGroup;
+        $this->user = $user;
 
         return $this;
     }
 
-    public function getStatus(): ?int
+    public function getGroup(): ?group
     {
-        return $this->status;
+        return $this->group;
     }
 
-    public function setStatus(?int $status): self
+    public function setGroup(?group $group): self
     {
-        $this->status = $status;
+        $this->group = $group;
 
         return $this;
     }
